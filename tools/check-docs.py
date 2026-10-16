@@ -35,8 +35,12 @@ for path, page in pages.items():
         url = urlsplit(href)
         if url.scheme or url.netloc:
             continue
-        target = ((root / unquote(url.path).lstrip("/")) if url.path.startswith("/")
-                  else (path.parent / unquote(url.path)) if url.path else path)
+        link_path = unquote(url.path)
+        if link_path.startswith("/") and not (root / link_path.lstrip("/")).exists() \
+                and (link_path.startswith("/HomeTiles/") or link_path == "/HomeTiles"):
+            link_path = link_path[len("/HomeTiles"):]
+        target = ((root / link_path.lstrip("/")) if link_path.startswith("/")
+                  else (path.parent / link_path) if link_path else path)
         if target.is_dir():
             target /= "index.html"
         target = target.resolve()
