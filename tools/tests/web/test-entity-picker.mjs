@@ -123,7 +123,7 @@ for (const match of i18n.matchAll(/static const LocaleProfile kLocale(\w+) = \{/
   assert.ok(labels[2].includes('{query}'), `${match[1]} no-match text names the search`);
   locales[match[1]] = {labels, kinds, icons};
 }
-assert.deepEqual(Object.keys(locales).sort(), ['De', 'En', 'Fr', 'Pl']);
+assert.deepEqual(Object.keys(locales).sort(), ['De', 'En', 'Fr', 'Ko', 'Pl']);
 assert.equal(locales.De.labels[0], 'Entität wählen');
 assert.equal(locales.En.kinds[15], 'Scene');
 

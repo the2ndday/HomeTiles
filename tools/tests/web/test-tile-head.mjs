@@ -89,7 +89,7 @@ for (const match of i18n.matchAll(/static const LocaleProfile kLocale(\w+) = \{/
   assert.ok(strings.every(text => text.trim().length) && strings[4].includes('{query}'), `${match[1]} labels`);
   labels[match[1]] = strings;
 }
-assert.deepEqual(Object.keys(labels).sort(), ['De', 'En', 'Fr', 'Pl']);
+assert.deepEqual(Object.keys(labels).sort(), ['De', 'En', 'Fr', 'Ko', 'Pl']);
 
 // ---- The real bundle in headless Chrome (German) ----
 const names = [...read('src/tiles/icons/mdi_icons.cpp').matchAll(/^\s*\{"([a-z0-9-]+)", 0x/gm)].map(m => m[1]);
