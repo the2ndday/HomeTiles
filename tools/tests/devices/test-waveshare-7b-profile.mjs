@@ -225,16 +225,16 @@ for (const marker of [
 ]) {
   requireMarker(sketchProfiles, marker, 'Waveshare 7B silicon build profiles');
 }
-for (const marker of [
-  'profile: waveshare_7b\n            key: waveshare_touch_lcd_7b',
-  'silicon_variant: pre_v3',
-  'profile: waveshare_7b_rev3\n            key: waveshare_touch_lcd_7b_rev3',
-  'metadata_key: waveshare_touch_lcd_7b',
-  'silicon_variant: post_v3',
-  '--silicon-variant "${{ matrix.silicon_variant || \'default\' }}"',
-]) {
-  requireMarker(firmwareWorkflow, marker, 'Waveshare 7B release matrix');
-}
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry; the 7B release variants live in the device catalog, which
+// generate-device-profiles.mjs turns into matrix entries upstream.
+const sevenB = getReleaseProfile('waveshare_touch_lcd_7b');
+assert.equal(sevenB.siliconVariant, 'pre_v3');
+assert.equal(sevenB.metadataDeviceKey, 'waveshare_touch_lcd_7b');
+const sevenBRev3 = getReleaseProfile('waveshare_touch_lcd_7b_rev3');
+assert.equal(sevenBRev3.metadataDeviceKey, 'waveshare_touch_lcd_7b');
+assert.equal(sevenBRev3.siliconVariant, 'post_v3');
+requireMarker(firmwareWorkflow, '--silicon-variant "${{ matrix.silicon_variant || \'default\' }}"', 'Waveshare 7B release matrix');
 for (const marker of [
   'kSiliconRevisionDescriptorMagic',
   'kSiliconRevisionDescriptorImageOffset',

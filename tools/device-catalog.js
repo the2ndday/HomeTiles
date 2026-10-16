@@ -129,10 +129,21 @@ function releaseAssetNames(version) {
 // release of its own version after an update; one per icon size.
 const iconFileNames = ['hometiles-icons-32.bin', 'hometiles-icons-40.bin', 'hometiles-icons-48.bin'];
 
-function verifyReleaseAssets(directory, version) {
+function verifyReleaseAssets(directory, version, deviceKey = '') {
   const actual = fs.readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.bin')).map((entry) => entry.name).sort();
-  const expected = [...releaseAssetNames(version), ...iconFileNames].sort();
+  // Optional device filter: releases of a single-device fork (Korean edition)
+  // carry only that device's assets, plus the shared icon files.
+  const keys = deviceKey ? [deviceKey] : releaseProfiles.map((profile) => profile.key);
+  for (const key of keys) getReleaseProfile(key);
+  const names = releaseFileVersion(version);
+  const expected = [
+    ...keys.flatMap((key) => [
+      `hometiles_${names}_${key}.bin`,
+      `hometiles_${names}_${key}_factory.bin`,
+    ]),
+    ...iconFileNames,
+  ].sort();
   assert(JSON.stringify(actual) === JSON.stringify(expected),
     `release asset set mismatch; missing: ${expected.filter((name) => !actual.includes(name)).join(', ') || '(none)'}; unexpected: ${actual.filter((name) => !expected.includes(name)).join(', ') || '(none)'}`);
 }
@@ -142,11 +153,11 @@ if (require.main === module) {
     const args = process.argv.slice(2);
     if (args[0] === '--profile' && args.length === 2) {
       console.log(JSON.stringify(getBuildProfile(args[1])));
-    } else if (args[0] === '--verify-release-assets' && args.length === 3) {
-      verifyReleaseAssets(args[1], args[2]);
+    } else if (args[0] === '--verify-release-assets' && (args.length === 3 || args.length === 4)) {
+      verifyReleaseAssets(args[1], args[2], args[3] || '');
       console.log('Release asset set: PASS');
     } else {
-      throw new Error('Usage: node tools/device-catalog.js --profile <name> | --verify-release-assets <directory> <version>');
+      throw new Error('Usage: node tools/device-catalog.js --profile <name> | --verify-release-assets <directory> <version> [<device-key>]');
     }
   } catch (error) {
     console.error(error.message);

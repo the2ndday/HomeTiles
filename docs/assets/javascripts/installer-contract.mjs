@@ -324,9 +324,12 @@ export function buildReleaseIndex(release, { allowMissingProfiles = false } = {}
   assert(RELEASE_TAG_PATTERN.test(tag), `Invalid release tag: ${tag || "(missing)"}`);
 
   const releaseUrl = new URL(String(release.html_url || ""));
+  // Any github.com/<owner>/HomeTiles release page is accepted: upstream uses
+  // GalusPeres/HomeTiles, the Korean edition fork uses the2ndday/HomeTiles.
   assert(
     releaseUrl.origin === "https://github.com" &&
-      releaseUrl.pathname === `/GalusPeres/HomeTiles/releases/tag/${tag}`,
+      /^\/[^/]+\/HomeTiles\/releases\/tag\/[^/]+$/.test(releaseUrl.pathname) &&
+      releaseUrl.pathname.endsWith(`/releases/tag/${tag}`),
     "Unexpected GitHub release URL.",
   );
 
@@ -347,8 +350,8 @@ export function buildReleaseIndex(release, { allowMissingProfiles = false } = {}
       const downloadUrl = new URL(String(asset.browser_download_url || ""));
       assert(
         downloadUrl.origin === "https://github.com" &&
-          downloadUrl.pathname ===
-            `/GalusPeres/HomeTiles/releases/download/${tag}/${asset.name}`,
+          /^\/[^/]+\/HomeTiles\/releases\/download\/[^/]+\//.test(downloadUrl.pathname) &&
+          downloadUrl.pathname.endsWith(`/releases/download/${tag}/${asset.name}`),
         `${asset.name} has an unexpected download URL.`,
       );
       if (mode === "update") {

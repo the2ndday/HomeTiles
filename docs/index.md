@@ -4,6 +4,8 @@ title: HomeTiles
 
 # HomeTiles
 
+> **Korean edition** — this site documents a fork of [GalusPeres/HomeTiles](https://github.com/GalusPeres/HomeTiles) (MIT). It adds Hangul fonts and publishes releases and a web installer **only for the GUITION ESP32-4848S040** (ESP32-S3). Releases are tagged `vX.Y.Z-ko`. For any other board, use the upstream project.
+
 HomeTiles is free, open-source firmware that turns a supported touch display into a Home Assistant control panel. Use tiles to switch lights, adjust heating, control music, and see sensor or energy data at a glance.
 
 <div class="ht-hero-switch">

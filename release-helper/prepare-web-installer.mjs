@@ -11,7 +11,10 @@ import {
   buildReleaseIndex,
 } from "../docs/assets/javascripts/installer-contract.mjs";
 
-const REPOSITORY = "GalusPeres/HomeTiles";
+// Korean edition fork by default; HOMETILES_REPOSITORY (or the GitHub Actions
+// GITHUB_REPOSITORY) overrides it, so upstream can run the same script.
+const REPOSITORY =
+  process.env.HOMETILES_REPOSITORY || process.env.GITHUB_REPOSITORY || "the2ndday/HomeTiles";
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`;
 
 function readCliArguments(argv) {

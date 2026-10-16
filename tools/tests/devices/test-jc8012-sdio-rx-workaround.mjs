@@ -51,20 +51,27 @@ assert.match(patchInstaller, /\$variant -eq 'esp32p4_es-libs'/);
 assert.match(patchInstaller, /'baseline-a8204'/);
 assert.match(patchInstaller, /'guition-jc8012-rx-single-block'/);
 
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry, so the JC8012 matrix lines exist only in upstream's full
+// matrix. The catalog check above (exactly one release profile with the
+// workaround variant) holds for both layouts.
+const matrixIsFiltered = /--matrix-device /.test(workflow);
 const specialMatrixLines = workflow.match(
   /^\s+rx_variant: repo-guition-jc8012-rx-single-block\s*$/gm,
 ) ?? [];
 assert.equal(
   specialMatrixLines.length,
-  1,
+  matrixIsFiltered ? 0 : 1,
   'Only the exact JC8012 V1 release profile may select the workaround',
 );
-const v1Start = workflow.indexOf('- label: Guition JC8012P4A1\n');
-const v2Start = workflow.indexOf('- label: Guition JC8012P4A1 V2\n');
-assert.ok(v1Start >= 0 && v2Start > v1Start);
-const v1Matrix = workflow.slice(v1Start, v2Start);
-assert.match(v1Matrix, /define: DEVICE_GUITION_JC8012P4A1/);
-assert.match(v1Matrix, /rx_variant: repo-guition-jc8012-rx-single-block/);
+if (!matrixIsFiltered) {
+  const v1Start = workflow.indexOf('- label: Guition JC8012P4A1\n');
+  const v2Start = workflow.indexOf('- label: Guition JC8012P4A1 V2\n');
+  assert.ok(v1Start >= 0 && v2Start > v1Start);
+  const v1Matrix = workflow.slice(v1Start, v2Start);
+  assert.match(v1Matrix, /define: DEVICE_GUITION_JC8012P4A1/);
+  assert.match(v1Matrix, /rx_variant: repo-guition-jc8012-rx-single-block/);
+}
 assert.match(workflow, /compiler\.c\.elf\.extra_flags=\$\{elf_flags\}/);
 assert.match(workflow, new RegExp(marker));
 

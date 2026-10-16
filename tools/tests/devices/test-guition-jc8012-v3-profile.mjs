@@ -57,7 +57,11 @@ assert.doesNotMatch(v3Profiles, /DEVICE_GUITION_JC8012P4A1\)/, 'The V1 keeps its
 const update = read('src/core/firmware/github_update.cpp');
 assert.match(update, /#elif defined\(DEVICE_GUITION_JC8012P4A1_V2\)\n(?:  \/\/[^\n]*\n)*  if \(strcmp\(silicon\.variant, "post_v3"\) == 0\) \{\n    key_out = "guition_jc8012p4a1_v3";\n  \} else if \(strcmp\(silicon\.variant, "pre_v3"\) != 0\) \{/);
 
-const workflow = read('.github/workflows/firmware.yml');
-assert.match(workflow, /profile: guition_jc8012p4a1_v3\n            key: guition_jc8012p4a1_v3\n            metadata_key: guition_jc8012p4a1_v2\n            define: DEVICE_GUITION_JC8012P4A1_V2\n            silicon_variant: post_v3/);
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry; the V3 contract lives in the device catalog instead.
+assert.equal(v3.key, 'guition_jc8012p4a1_v3');
+assert.equal(v3.metadataDeviceKey, 'guition_jc8012p4a1_v2');
+assert.equal(v3.define, 'DEVICE_GUITION_JC8012P4A1_V2');
+assert.equal(v3.siliconVariant, 'post_v3');
 
 console.log('Guition JC8012P4A1 V3 profile contract: PASS');

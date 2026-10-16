@@ -21,6 +21,8 @@ Lights, climate, sensors, energy, weather, cameras and more on a 4 to 10.1 inch 
 
 </div>
 
+> **Korean edition** — this is a fork of [GalusPeres/HomeTiles](https://github.com/GalusPeres/HomeTiles) (MIT). It adds Hangul fonts and builds, publishes and auto-updates firmware **only for the GUITION ESP32-4848S040** (ESP32-S3). Releases are tagged `vX.Y.Z-ko`. For any other board, use the upstream project.
+
 ## Screenshots
 
 ### Popups

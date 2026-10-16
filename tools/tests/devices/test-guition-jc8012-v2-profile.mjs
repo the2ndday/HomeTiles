@@ -106,16 +106,15 @@ const sketchProfiles = read('sketch.yaml');
 const workflow = read('.github/workflows/firmware.yml');
 requireMarker(sketchProfiles, '  guition_jc8012p4a1_v2:', 'Arduino profile');
 assert.equal(getBuildProfile('guition_jc8012p4a1_v2').define, 'DEVICE_GUITION_JC8012P4A1_V2');
-for (const marker of [
-  'profile: guition_jc8012p4a1_v2',
-  'key: guition_jc8012p4a1_v2',
-  'define: DEVICE_GUITION_JC8012P4A1_V2',
-  'node tools/run-tests.mjs',
-  '--verify-release-assets',
-]) {
-  requireMarker(workflow, marker, 'Firmware workflow');
-}
-assert.equal(getReleaseProfile('guition_jc8012p4a1_v2').siliconVariant, 'pre_v3');
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry; the V2 contract lives in the device catalog instead.
+requireMarker(workflow, 'node tools/run-tests.mjs', 'Firmware workflow');
+requireMarker(workflow, '--verify-release-assets', 'Firmware workflow');
+const v2Release = getReleaseProfile('guition_jc8012p4a1_v2');
+assert.equal(v2Release.key, 'guition_jc8012p4a1_v2');
+assert.equal(v2Release.define, 'DEVICE_GUITION_JC8012P4A1_V2');
+assert.equal(v2Release.rxVariant, 'repo-a8204');
+assert.equal(v2Release.siliconVariant, 'pre_v3');
 
 for (const [file, marker] of [
   ['README.md', 'https://galusperes.github.io/#device-support'],

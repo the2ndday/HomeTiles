@@ -178,12 +178,18 @@ assert.match(sketchProfiles, /^  waveshare_10_1_rev3:\r?\n    fqbn: [^\r\n]*Chip
 const firmwareWorkflowKeys = [...read(".github/workflows/firmware.yml").matchAll(/^\s+key:\s+([a-z0-9_]+)\s*$/gm)]
   .map((match) => match[1]);
 const releaseWorkflow = read(".github/workflows/firmware.yml");
-assert.deepEqual(
-  releaseTargets.map((target) => target.key).sort(),
-  [...firmwareWorkflowKeys].sort(),
-  "Installer device keys must match the release build matrix.",
+// The Korean edition fork builds a single-device matrix; upstream builds all
+// devices. Every matrix device must be a known installer device, and the
+// installer hides devices whose release assets are missing
+// (allowMissingProfiles), so both layouts stay consistent.
+assert.ok(firmwareWorkflowKeys.length > 0, "The release build matrix must list at least one device.");
+assert.ok(
+  firmwareWorkflowKeys.every((key) => releaseTargets.some((target) => target.key === key)),
+  "Every release build matrix device must be an installer device.",
 );
-for (const target of releaseTargets.filter((candidate) => candidate.chipFamily === "ESP32-P4")) {
+assert.ok(new Set(firmwareWorkflowKeys).size === firmwareWorkflowKeys.length, "The matrix must not repeat devices.");
+for (const target of releaseTargets.filter((candidate) =>
+  candidate.chipFamily === "ESP32-P4" && firmwareWorkflowKeys.includes(candidate.key))) {
   const profileStart = releaseWorkflow.indexOf(`profile: ${target.buildProfile}`);
   const profileEnd = releaseWorkflow.indexOf("publish: true", profileStart);
   assert.ok(profileStart >= 0 && profileEnd > profileStart, `Missing workflow entry ${target.buildProfile}.`);

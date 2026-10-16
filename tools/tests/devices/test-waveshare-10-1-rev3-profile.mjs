@@ -32,9 +32,18 @@ assert.throws(() => validateCatalog(widened), /unsafe revision range/);
 const sketch = read('sketch.yaml');
 assert.match(sketch, /^  waveshare_10_1:\n    fqbn: [^\n]*ChipVariant=prev3$/m);
 assert.match(sketch, /^  waveshare_10_1_rev3:\n    fqbn: [^\n]*ChipVariant=postv3$/m);
-const workflow = read('.github/workflows/firmware.yml');
-assert.match(workflow, /profile: waveshare_10_1\n            key: waveshare_touch_lcd_10_1\n            define: DEVICE_WAVESHARE_TOUCH_LCD_10_1\n            silicon_variant: pre_v3/);
-assert.match(workflow, /profile: waveshare_10_1_rev3\n            key: waveshare_touch_lcd_10_1_rev3\n            metadata_key: waveshare_touch_lcd_10_1\n            define: DEVICE_WAVESHARE_TOUCH_LCD_10_1\n            silicon_variant: post_v3/);
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry; the 10.1 release variants live in the device catalog, which
+// generate-device-profiles.mjs turns into matrix entries upstream.
+const tenOne = getReleaseProfile('waveshare_touch_lcd_10_1');
+assert.equal(tenOne.key, 'waveshare_touch_lcd_10_1');
+assert.equal(tenOne.define, 'DEVICE_WAVESHARE_TOUCH_LCD_10_1');
+assert.equal(tenOne.siliconVariant, 'pre_v3');
+const tenOneRev3 = getReleaseProfile('waveshare_touch_lcd_10_1_rev3');
+assert.equal(tenOneRev3.key, 'waveshare_touch_lcd_10_1_rev3');
+assert.equal(tenOneRev3.metadataDeviceKey, 'waveshare_touch_lcd_10_1');
+assert.equal(tenOneRev3.define, 'DEVICE_WAVESHARE_TOUCH_LCD_10_1');
+assert.equal(tenOneRev3.siliconVariant, 'post_v3');
 
 const metadata = read('src/core/firmware/firmware_metadata.cpp');
 const v3Profiles = metadata.slice(metadata.indexOf('#if defined(DEVICE_WAVESHARE_TOUCH_LCD_7B)'),

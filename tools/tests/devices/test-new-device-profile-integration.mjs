@@ -47,7 +47,13 @@ for (const profile of profiles) {
 
 // Check independently emitted consumers, rather than the spelling of their maps.
 const ciKeys = [...workflow.matchAll(/^            key: (\w+)$/gm)].map((match) => match[1]);
-assert.deepEqual(ciKeys.sort(), releaseProfiles.map((profile) => profile.key).sort());
+// The Korean edition fork restricts the CI matrix with --matrix-device in the
+// toolchain job; upstream keeps the complete matrix. Either way, the matrix
+// keys must be exactly the catalog's release profiles filtered by that flag.
+const matrixDevice = (workflow.match(/generate-device-profiles\.mjs --check --matrix-device (\w+)/) || [])[1] || '';
+const expectedCiKeys = releaseProfiles.map((profile) => profile.key)
+  .filter((key) => !matrixDevice || key === matrixDevice);
+assert.deepEqual(ciKeys.sort(), expectedCiKeys.sort());
 assert.match(localBuild, /device-catalog\.js'\) --profile \$Profile/);
 assert.match(localBuild, /\$isNativeS3 = \$buildProfile\.chipFamily -eq 'ESP32-S3'/);
 assert.match(localBuild, /-D\$\(\$buildProfile\.define\)/);
@@ -55,8 +61,8 @@ assert.match(workflow, /if: matrix\.rx_variant != 'native-s3'/);
 assert.match(workflow, /device-catalog\.js --verify-release-assets/);
 assert.match(read('release-helper/package-ci-build.js'), /require\('\.\.\/tools\/device-catalog\.js'\)/);
 assert.match(read('release-helper/import-latest-arduino-build.js'), /require\('\.\.\/tools\/device-catalog\.js'\)/);
-const generated = spawnSync(process.execPath, ['tools/generate-device-profiles.mjs', '--check'], {
-  cwd: repoRoot, encoding: 'utf8',
-});
+const generated = spawnSync(process.execPath,
+  ['tools/generate-device-profiles.mjs', '--check', ...(matrixDevice ? ['--matrix-device', matrixDevice] : [])],
+  { cwd: repoRoot, encoding: 'utf8' });
 assert.equal(generated.status, 0, generated.stdout + generated.stderr);
 console.log('All device profile integration contracts: PASS');

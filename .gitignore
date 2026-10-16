@@ -38,6 +38,9 @@ Thumbs.db
 .tmp_fonts/
 libraries/
 
+# Downloaded font sources for tools/generate-korean-fonts.mjs
+.cache/
+
 # Local media sources; optimized web versions live under docs/
 docs/images/IMG_4804.JPG.jpeg
 docs/videos/IMG_4807.MOV

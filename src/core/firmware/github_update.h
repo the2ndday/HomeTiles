@@ -22,8 +22,10 @@
 // the redirect.
 namespace GithubUpdate {
 
+// Korean edition fork: releases and OTA updates come from this repository.
+// Upstream: https://github.com/GalusPeres/HomeTiles
 constexpr const char* kRepoUrl =
-    "https://github.com/GalusPeres/HomeTiles";
+    "https://github.com/the2ndday/HomeTiles";
 
 // Release files the panel fetches for itself (the icon file) come from the
 // release of its own FW_VERSION. Beta builds carry a version no release of the

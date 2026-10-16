@@ -6,8 +6,26 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { releaseProfiles, installerProfiles } = require('./device-catalog.js');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const check = process.argv.includes('--check');
-if (process.argv.slice(2).some((arg) => arg !== '--check')) throw new Error('Only --check is supported.');
+const args = process.argv.slice(2);
+const check = args.includes('--check');
+// Korean edition fork: --matrix-device <key> restricts the generated CI
+// matrix to a single release device. The browser profiles and the device
+// catalog stay complete; the web installer simply hides devices whose
+// release assets are missing (allowMissingProfiles).
+const matrixDeviceIndex = args.findIndex((arg) => arg === '--matrix-device' || arg.startsWith('--matrix-device='));
+const matrixDevice = matrixDeviceIndex < 0
+  ? ''
+  : args[matrixDeviceIndex].startsWith('--matrix-device=')
+    ? args[matrixDeviceIndex].slice('--matrix-device='.length)
+    : (args[matrixDeviceIndex + 1] || '');
+if (matrixDeviceIndex >= 0 && !matrixDevice) {
+  throw new Error('--matrix-device requires a device key.');
+}
+if (args.some((arg, index) =>
+  arg !== '--check' && arg !== '--matrix-device' &&
+  !(arg.startsWith('--matrix-device=') || (matrixDeviceIndex >= 0 && index === matrixDeviceIndex + 1)))) {
+  throw new Error('Only --check and --matrix-device <key> are supported.');
+}
 
 function update(relativePath, content) {
   const target = path.join(root, relativePath);
@@ -27,7 +45,13 @@ const workflowPath = '.github/workflows/firmware.yml';
 const workflow = fs.readFileSync(path.join(root, workflowPath), 'utf8').replace(/\r\n/g, '\n');
 const start = '        # BEGIN GENERATED DEVICE MATRIX';
 const end = '        # END GENERATED DEVICE MATRIX';
-const matrix = [...releaseProfiles].sort((a, b) => a.ciOrder - b.ciOrder).map((profile) => [
+const matrixProfiles = matrixDevice
+  ? releaseProfiles.filter((profile) => profile.key === matrixDevice)
+  : releaseProfiles;
+if (matrixDevice && matrixProfiles.length !== 1) {
+  throw new Error(`Unknown --matrix-device key: ${matrixDevice}`);
+}
+const matrix = [...matrixProfiles].sort((a, b) => a.ciOrder - b.ciOrder).map((profile) => [
   `          - label: ${profile.ciLabel}`,
   `            profile: ${profile.buildProfile}`,
   `            key: ${profile.key}`,

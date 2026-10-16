@@ -69,20 +69,17 @@ assert.equal(catalogEntry.define, 'DEVICE_GUITION_JC4880P443_PORTRAIT');
 assert.equal(catalogEntry.publish, true, 'portrait is a published profile');
 assert.equal(catalogEntry.flashSize, 16 * 1024 * 1024);
 assert.equal(catalogEntry.siliconVariant, 'pre_v3');
-for (const marker of [
-  'label: Guition JC4880P443',
-  'profile: guition_jc4880p443_portrait',
-  'key: guition_jc4880p443_portrait',
-  'define: DEVICE_GUITION_JC4880P443_PORTRAIT',
-  'silicon_variant: pre_v3',
-  'rx_variant: repo-a8204',
-  'node tools/run-tests.mjs',
-  '--verify-release-assets',
-]) {
-  requireMarker(workflow, marker, 'firmware workflow');
-}
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry. Every other device still has a complete release entry in the
+// device catalog, which generate-device-profiles.mjs turns into a matrix
+// entry upstream; assert the catalog fields here instead of the workflow.
+requireMarker(workflow, 'node tools/run-tests.mjs', 'firmware workflow');
+requireMarker(workflow, '--verify-release-assets', 'firmware workflow');
 const releaseProfile = getReleaseProfile('guition_jc4880p443_portrait');
+assert.equal(releaseProfile.key, 'guition_jc4880p443_portrait');
+assert.equal(releaseProfile.define, 'DEVICE_GUITION_JC4880P443_PORTRAIT');
 assert.equal(releaseProfile.siliconVariant, 'pre_v3');
+assert.equal(releaseProfile.rxVariant, 'repo-a8204');
 assert.equal(releaseProfile.legacySlug, 'guition-jc4880p443-portrait');
 assert.equal(releaseProfile.metadataDeviceKey, 'guition_jc4880p443_portrait');
 

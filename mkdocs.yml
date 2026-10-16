@@ -1,12 +1,11 @@
 site_name: HomeTiles
 site_description: Home Assistant touch dashboards for ESP32-P4 and ESP32-S3 displays. Install HomeTiles, connect the Bridge, and configure your tiles.
-site_url: https://galusperes.github.io/
-repo_url: https://github.com/GalusPeres/HomeTiles
-repo_name: GalusPeres/HomeTiles
-
-extra:
-  sitemap_aliases:
-    - https://galusperes.github.io/HomeTiles/
+# Korean edition fork: GitHub Pages project site lives under the /HomeTiles/
+# subpath. The installer scripts resolve assets relative to the page URL, so
+# the subpath deployment works unchanged.
+site_url: https://the2ndday.github.io/HomeTiles/
+repo_url: https://github.com/the2ndday/HomeTiles
+repo_name: the2ndday/HomeTiles
 
 theme:
   name: material

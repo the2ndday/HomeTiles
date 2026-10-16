@@ -43,20 +43,16 @@ requireMarker(panel, 'kWaveshareSt7701Init4_3', 'Waveshare init table');
 requireMarker(sketch, '  waveshare_4_3:', 'build profile');
 requireMarker(sketch, 'ChipVariant=prev3', 'pre-v3 build selection');
 assert.equal(getBuildProfile('waveshare_4_3').define, 'DEVICE_WAVESHARE_TOUCH_LCD_4_3');
-for (const marker of [
-  'label: Waveshare Touch LCD 4.3',
-  'profile: waveshare_4_3',
-  'key: waveshare_touch_lcd_4_3',
-  'define: DEVICE_WAVESHARE_TOUCH_LCD_4_3',
-  'silicon_variant: pre_v3',
-  'rx_variant: repo-a8204',
-  'node tools/run-tests.mjs',
-  '--verify-release-assets',
-]) {
-  requireMarker(workflow, marker, 'firmware workflow');
-}
+// Korean edition fork: firmware.yml builds only the GUITION ESP32-4848S040
+// matrix entry; the 4.3 release contract lives in the device catalog, which
+// generate-device-profiles.mjs turns into a matrix entry upstream.
+requireMarker(workflow, 'node tools/run-tests.mjs', 'firmware workflow');
+requireMarker(workflow, '--verify-release-assets', 'firmware workflow');
 const releaseProfile = getReleaseProfile('waveshare_touch_lcd_4_3');
+assert.equal(releaseProfile.key, 'waveshare_touch_lcd_4_3');
+assert.equal(releaseProfile.define, 'DEVICE_WAVESHARE_TOUCH_LCD_4_3');
 assert.equal(releaseProfile.siliconVariant, 'pre_v3');
+assert.equal(releaseProfile.rxVariant, 'repo-a8204');
 assert.equal(releaseProfile.legacySlug, 'waveshare-touch-lcd-4-3');
 assert.equal(releaseProfile.metadataDeviceKey, 'waveshare_touch_lcd_4_3');
 

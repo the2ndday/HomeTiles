@@ -1,0 +1,170 @@
+# Korean edition: keep the fork in sync with upstream automatically.
+#
+# Every day (and on demand) this workflow rebases the fork's Korean patch
+# commits onto the newest upstream release tag, publishes a `vX.Y.Z-ko` tag,
+# and dispatches the firmware build for that tag. Tags pushed with
+# GITHUB_TOKEN do not trigger other workflows, so the firmware build is
+# started explicitly with `gh workflow run firmware.yml --ref <tag>`
+# (workflow_dispatch is allowed for the GITHUB_TOKEN). firmware.yml's
+# release job publishes the GitHub release and then dispatches docs.yml; the
+# last step here waits for that release and dispatches docs.yml again as a
+# safety net (the docs.yml concurrency group de-duplicates both dispatches).
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main with full history and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Fetch upstream tags
+        run: |
+          git remote add upstream https://github.com/GalusPeres/HomeTiles.git
+          git fetch upstream --tags --force
+
+      - name: Find the highest upstream release tag
+        id: upstream
+        run: |
+          # Only plain semantic release tags count; ignore names like
+          # v1.0-unified-stable or the fork's own vX.Y.Z-ko tags.
+          up="$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)"
+          if [ -z "${up}" ]; then
+            echo "No upstream release tag found." >&2
+            exit 1
+          fi
+          echo "up=${up}" >> "$GITHUB_OUTPUT"
+          echo "Highest upstream release tag: ${up}"
+
+      - name: Skip when the Korean tag already exists
+        id: skip
+        run: |
+          up="${{ steps.upstream.outputs.up }}"
+          if git ls-remote origin "refs/tags/${up}-ko" | grep -q .; then
+            echo "Tag ${up}-ko already exists on origin; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rebase the Korean patch commits onto the upstream tag
+        id: rebase
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Files the next step regenerates mechanically: on a conflict keep the
+          # upstream copy (during a rebase "ours" is the upstream base). Every
+          # upstream release bumps FW_VERSION, and upstream font regenerations
+          # touch the same .fallback lines the Korean wiring edits, so without
+          # this every sync would stop on a conflict. The rule lives in the
+          # local .git/info/attributes so it can never conflict itself.
+          git config merge.ours.driver true
+          mkdir -p .git/info
+          {
+            echo "version.txt merge=ours"
+            echo "src/fonts/ui_font_*.c merge=ours"
+          } >> .git/info/attributes
+          git rebase "${{ steps.upstream.outputs.up }}"
+
+      - name: Open an issue for a rebase conflict
+        if: steps.skip.outputs.skip != 'true' && failure() && steps.rebase.conclusion == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          up="${{ steps.upstream.outputs.up }}"
+          git rebase --abort || true
+          {
+            echo "The automatic rebase of the Korean edition patches onto upstream tag \`${up}\` failed with conflicts. Resolve them manually, then rerun the workflow."
+            echo
+            echo '```'
+            git status --short
+            echo
+            git log --oneline -5
+            echo '```'
+          } > "${RUNNER_TEMP}/sync-conflict.md"
+          gh issue create \
+            --title "Upstream sync: rebase onto ${up} conflicted" \
+            --body-file "${RUNNER_TEMP}/sync-conflict.md"
+          exit 1
+
+      - name: Apply Korean edition changes and publish the tag
+        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
+        env:
+          UP: ${{ steps.upstream.outputs.up }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Restore the Korean fallback wiring; idempotent, so upstream font
+          # regenerations are handled by replaying this step.
+          node tools/apply-korean-fallback.mjs
+
+          # Regenerate the Korean fonts only when they are missing.
+          if ! ls src/fonts/ui_font_korean_*.c >/dev/null 2>&1; then
+            node tools/generate-korean-fonts.mjs
+          fi
+
+          # firmware.yml requires the tag to equal FW_VERSION exactly.
+          sed -i "s/^#define FW_VERSION \".*\"/#define FW_VERSION \"${UP}-ko\"/" version.txt
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Korean edition: rebase on ${UP}, release ${UP}-ko"
+          fi
+
+          git push --force-with-lease origin main
+          git tag "${UP}-ko"
+          git push origin "refs/tags/${UP}-ko"
+
+      - name: Dispatch the firmware build for the new Korean tag
+        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A tag pushed with GITHUB_TOKEN does not trigger workflows, but a
+          # workflow_dispatch does. With github.ref = refs/tags/vX.Y.Z-ko the
+          # firmware.yml release job builds and publishes the GitHub release.
+          gh workflow run firmware.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "${{ steps.upstream.outputs.up }}-ko"
+
+      - name: Refresh the web installer after the release exists
+        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KO_TAG: ${{ steps.upstream.outputs.up }}-ko
+        run: |
+          # Wait for the firmware workflow to publish the release, then
+          # dispatch docs.yml so the web installer mirrors it. firmware.yml
+          # also dispatches docs.yml right after uploading the release assets;
+          # the docs.yml concurrency group de-duplicates both dispatches.
+          for attempt in $(seq 1 240); do
+            if gh release view "${KO_TAG}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh workflow run docs.yml --repo "$GITHUB_REPOSITORY" --ref "${KO_TAG}"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Release ${KO_TAG} did not appear within two hours." >&2
+          exit 1

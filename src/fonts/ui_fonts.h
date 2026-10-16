@@ -15,6 +15,14 @@ LV_FONT_DECLARE(ui_font_cyrillic_14);
 LV_FONT_DECLARE(ui_font_cyrillic_16);
 LV_FONT_DECLARE(ui_font_cyrillic_20);
 LV_FONT_DECLARE(ui_font_cyrillic_24);
+// Korean fallback fonts (tools/generate-korean-fonts.mjs), chained behind
+// Inter and Cyrillic so Hangul text renders on every layout.
+LV_FONT_DECLARE(ui_font_korean_12);
+LV_FONT_DECLARE(ui_font_korean_14);
+LV_FONT_DECLARE(ui_font_korean_16);
+LV_FONT_DECLARE(ui_font_korean_20);
+LV_FONT_DECLARE(ui_font_korean_24);
+LV_FONT_DECLARE(ui_font_korean_28);
 LV_FONT_DECLARE(ui_symbols_20);
 LV_FONT_DECLARE(ui_symbols_24);
 LV_FONT_DECLARE(ui_font_28);
