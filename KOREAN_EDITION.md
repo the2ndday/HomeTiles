@@ -18,7 +18,7 @@ pushed from HA; they have to be in the firmware.
 | Topic | Decision |
 |---|---|
 | Font | **Noto Sans KR Regular** (SIL OFL: redistribution and conversion are allowed). KoPub World Dotum was rejected because its terms restrict modification. |
-| Glyph set | 2,350 KS X 1001 Hangul syllables + compatibility jamo U+3131–318E + U+3000–3003, U+300C–300F |
+| Glyph set | 2,350 KS X 1001 Hangul syllables + compatibility jamo U+3131–318E + U+3000–3003, U+300C–300F + every Hangul syllable/jamo used in `src/core/i18n/i18n.cpp` (the generator scans the file, so the Korean UI is always 100 % covered) |
 | Sizes | 12, 14, 16, 20, 24, 28 px, 4 bpp, compressed (`LV_USE_FONT_COMPRESSED 1`) |
 | Wiring | LVGL 9 `fallback` chain: Inter → (Cyrillic for 14/16/20/24) → `ui_font_korean_N`. 12 and 28 → Korean directly; 20_semibold → korean_20. `tools/apply-korean-fallback.mjs` is idempotent so it survives upstream font regeneration. |
 | Flash budget | App slot 0x680000 = 6.5 MB; stock 4848 bin = 4.45 MB → about 2 MB headroom. Target Korean data ≤ about 1.6 MB. |
@@ -37,15 +37,15 @@ pushed from HA; they have to be in the firmware.
   3. version.txt `FW_VERSION "v0.9.1-ko"`
   4. firmware.yml matrix trimmed to 4848
   5. sync-upstream.yml; docs.yml gets workflow_dispatch, a neutral git identity, and works under the subpath
-- [ ] Host review of the diff (check the font data size, the wiring and the workflows)
-- [ ] Commit to `main`, push to origin
-- [ ] Repo settings: Actions enabled on the fork; **Settings → Pages → Deploy from branch `gh-pages`** (created by docs.yml on first run); Actions "Read and write" workflow permissions
-- [ ] Tag `v0.9.1-ko` (or `gh workflow run firmware.yml --ref v0.9.1-ko`) → CI builds → release `hometiles_v0.9.1-ko_guition_esp32_4848s040.bin`
-- [ ] Run docs.yml → web installer at the Pages URL
+- [x] Host review of the diff (check the font data size, the wiring and the workflows)
+- [x] Commit to `main`, push to origin
+- [x] Repo settings: Actions enabled on the fork; **Settings → Pages → Deploy from branch `gh-pages`** (created by docs.yml on first run); Actions "Read and write" workflow permissions
+- [x] Tag `v0.9.1-ko` (or `gh workflow run firmware.yml --ref v0.9.1-ko`) → CI builds → release `hometiles_v0.9.1-ko_guition_esp32_4848s040.bin` (5.76 MiB update bin, 16.00 MiB factory bin, plus icon files)
+- [x] Fix `tools/lib/docs-browser.mjs` (`Page.reload` `loadEventFired` synchronization + offline `--host-resolver-rules` + transient context-navigation handling) so `Deploy docs` (`test-docs-serial-navigation.mjs`) passes reliably in CI
 - [ ] First flash: Chrome → installer (fork Pages URL, or upstream installer "Local .bin") → device **Guition ESP32-4848S040C_I** → mode **Update** (keeps settings). The serial port is `/dev/ttyUSB0` (CH340); the user is in group `uucp`.
-- [ ] Verify Korean on the panel: the PC page Media tile shows `media_player.alicia` titles (YouTube Korean titles)
-- [x] Committed `4feb6a08`, pushed; Actions enabled (write perms); tag `v0.9.1-ko` pushed → runs "Firmware builds" 38840341373 + "Deploy docs" 38840315338 (check `gh run list -R the2ndday/HomeTiles`). After docs succeeds: enable Pages (`gh api -X POST repos/the2ndday/HomeTiles/pages -f 'source[branch]=gh-pages' -f 'source[path]=/'`).
-- [ ] **NEXT (user request): Korean UI language** on top of English. Upstream i18n: `src/core/i18n/i18n.h` (struct `Strings`, ~716 `const char*` fields) and `i18n.cpp` with tables `kStringsDe/En/Fr/Pl` (~670 lines each) + `LocaleProfile kLocaleXx` (date/time/weather words, ~120 lines) + the `kLanguages[]` registry (line ~3111). The Web Admin JS strings come from the same table (`src/web/server/render/web_admin_scripts.cpp` `appendJsEntry("tileSaved", tr.js_tile_saved)`). Plan: add `kStringsKo` + `kLocaleKo` ("ko", "한국어"), register in `kLanguages`, translate from the En table; then check all Hangul used is in the KS X 1001 subset (extend the font generator to include any missing syllables from the Ko table automatically); then run the tests; then tag a new `-ko` release. Delegate to DeepSeek (complex_reasoning); review the translation quality.
+- [ ] Verify Korean on the panel: the PC page Media tile shows `media_player.alicia` titles (YouTube Korean titles) and Korean UI language ("한국어") in Settings → Language
+- [x] Committed `4feb6a08`, pushed; Actions enabled (write perms); tag `v0.9.1-ko` pushed → runs "Firmware builds" 38840341373 (succeeded) + "Deploy docs" (re-triggered with `docs-browser.mjs` fix). After docs succeeds: enable Pages (`gh api -X POST repos/the2ndday/HomeTiles/pages -f 'source[branch]=gh-pages' -f 'source[path]=/'`).
+- [x] **Korean UI language** ("ko", "한국어") implemented on top of English. `src/core/i18n/i18n.cpp` now has `kStringsKo` (636 fields, all translated from `kStringsEn` with matching printf placeholders) and `kLocaleKo` (locale profile: 24-hour time, YYYY/MM/DD, `"{m} {d}일"` short date, `"{M} {d}일"` long date, Korean weekday/month names, timezone, climate/cover/binary-sensor/device/editable/entity-picker labels), both registered in `kLanguages[]`. Contract strings: `settings_link_direct_fmt` = `"직접 연결 · Bridge %s"`, `settings_link_mqtt_fmt` = `"MQTT · Broker %s"`, `settings_update_short` = `"업데이트"`, binary sensor ranges stay `"24H"`/`"7D"`, the welcome text `"환영!\n스와이프로 이동"` fits the Text tile's 31 bytes. `tools/generate-korean-fonts.mjs` scans `i18n.cpp` for Hangul and adds any missing syllables/jamo to the glyph set (the translation uses only KS X 1001 syllables, so the fonts keep 2,452 glyphs; the .c files were regenerated with the updated Opts note). Tests and `tools/settings-preview.mjs` accept Korean (`kStringsKo`/`kLocaleKo`, `--lang=ko`, 5 languages). (DeepSeek `dsw_mvacxcmi_75eaxg` complex_reasoning; host reviewed the translation quality.)
 - [ ] Optional: suggest upstream (GitHub issue/PR) adding optional CJK fallback fonts
 
 ## Useful commands

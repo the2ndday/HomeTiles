@@ -69,7 +69,8 @@ function entries(table) {
   }
   return out;
 }
-const tables = {de: entries('kStringsDe'), en: entries('kStringsEn'), fr: entries('kStringsFr'), pl: entries('kStringsPl')};
+const tables = {de: entries('kStringsDe'), en: entries('kStringsEn'), fr: entries('kStringsFr'), pl: entries('kStringsPl'),
+  ko: entries('kStringsKo')};
 for (const [language, table] of Object.entries(tables)) {
   assert.equal(table.length, fields.length, `${language}: one entry per field`);
 }
@@ -77,35 +78,35 @@ for (const [language, table] of Object.entries(tables)) {
 // The same printf placeholders as English, field by field.
 const specs = text => (text.match(/%[-+ #0]*\d*(?:\.\d+)?(?:l|ll|h|z)?[sdufxXc]/g) || []).join(' ');
 fields.forEach((field, index) => {
-  for (const language of ['de', 'fr', 'pl']) {
+  for (const language of ['de', 'fr', 'pl', 'ko']) {
     assert.equal(specs(tables[language][index]), specs(tables.en[index]), `${language}.${field} placeholders`);
   }
 });
 
 // Known texts at known fields, around the former Polish shift and at the end.
 const expected = {
-  settings_head_gear: ['"Zahnrad oben im Kopf"', '"Gear in the head"', null, '"Zębatka w nagłówku"'],
-  head_bar_heading: ['"Kopfleiste"', '"Head bar"', `"Barre d'en-tête"`, '"Pasek nagłówka"'],
-  head_bar_gear: ['"Zahnrad für Settings"', '"Gear for Settings"', '"Engrenage pour les réglages"', '"Zębatka do ustawień"'],
-  head_bar_clock: ['"Uhr"', '"Clock"', '"Horloge"', '"Zegar"'],
-  head_bar_overview: ['"Seitenübersicht"', '"Page overview"', '"Aperçu des pages"', '"Przegląd stron"'],
-  head_bar_home_title: ['"Home-Titel"', '"Home title"', `"Titre de l'accueil"`, '"Tytuł strony głównej"'],
+  settings_head_gear: ['"Zahnrad oben im Kopf"', '"Gear in the head"', null, '"Zębatka w nagłówku"', '"상단의 톱니바퀴"'],
+  head_bar_heading: ['"Kopfleiste"', '"Head bar"', `"Barre d'en-tête"`, '"Pasek nagłówka"', '"헤드 바"'],
+  head_bar_gear: ['"Zahnrad für Settings"', '"Gear for Settings"', '"Engrenage pour les réglages"', '"Zębatka do ustawień"', '"설정 톱니바퀴"'],
+  head_bar_clock: ['"Uhr"', '"Clock"', '"Horloge"', '"Zegar"', '"시계"'],
+  head_bar_overview: ['"Seitenübersicht"', '"Page overview"', '"Aperçu des pages"', '"Przegląd stron"', '"페이지 개요"'],
+  head_bar_home_title: ['"Home-Titel"', '"Home title"', `"Titre de l'accueil"`, '"Tytuł strony głównej"', '"홈 제목"'],
   head_bar_home_auto_hint: ['"Name in der Sprache des Panels"', `"Name in the panel's language"`, '"Nom dans la langue du panneau"',
-    '"Nazwa w języku panelu"'],
-  edge_left: ['"Links"', '"Left"', null, '"Lewo"'],
-  edge_bottom: ['"Unten"', '"Bottom"', null, '"Dół"'],
-  factory_pin_label: [null, '"Factory PIN"', null, '"PIN fabryczny"'],
-  local_camera_status_error: [null, '"Camera error"', null, '"Błąd kamery"'],
-  local_camera_stream_mode: [null, '"Mode"', null, '"Tryb"'],
-  swipe_gestures_heading: ['"Wischen vom Rand"', '"Edge swipes"', '"Balayages depuis le bord"', '"Przesunięcia od krawędzi"'],
-  screensaver_no_sd: ['"Keine microSD-Karte eingesteckt."', '"No microSD card inserted."', '"Aucune carte microSD insérée."', '"Brak karty microSD."'],
-  tile_fill: ['"Ausfüllen"', '"Fill"', '"Remplir"', '"Wypełnij"'],
+    '"Nazwa w języku panelu"', '"패널 언어로 된 이름"'],
+  edge_left: ['"Links"', '"Left"', null, '"Lewo"', '"왼쪽"'],
+  edge_bottom: ['"Unten"', '"Bottom"', null, '"Dół"', '"아래쪽"'],
+  factory_pin_label: [null, '"Factory PIN"', null, '"PIN fabryczny"', '"공장 PIN"'],
+  local_camera_status_error: [null, '"Camera error"', null, '"Błąd kamery"', '"카메라 오류"'],
+  local_camera_stream_mode: [null, '"Mode"', null, '"Tryb"', '"모드"'],
+  swipe_gestures_heading: ['"Wischen vom Rand"', '"Edge swipes"', '"Balayages depuis le bord"', '"Przesunięcia od krawędzi"', '"가장자리 스와이프"'],
+  screensaver_no_sd: ['"Keine microSD-Karte eingesteckt."', '"No microSD card inserted."', '"Aucune carte microSD insérée."', '"Brak karty microSD."', '"microSD 카드가 없습니다."'],
+  tile_fill: ['"Ausfüllen"', '"Fill"', '"Remplir"', '"Wypełnij"', '"채우기"'],
 };
 for (const [field, values] of Object.entries(expected)) {
   const index = fields.indexOf(field);
   assert.ok(index >= 0, `Strings.${field}`);
-  ['de', 'en', 'fr', 'pl'].forEach((language, i) => {
+  ['de', 'en', 'fr', 'pl', 'ko'].forEach((language, i) => {
     if (values[i] !== null) assert.equal(tables[language][index], values[i], `${language}.${field}`);
   });
 }
-console.log(`i18n tables: ${fields.length} fields aligned in all four languages`);
+console.log(`i18n tables: ${fields.length} fields aligned in all five languages`);

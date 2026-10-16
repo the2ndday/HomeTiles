@@ -41,7 +41,7 @@ const fields = [...struct.replace(/\/\/[^\n]*/g, '').matchAll(/const char\*\s+(\
 const first = fields.indexOf(keys[0]);
 assert.deepEqual(fields.slice(first, first + keys.length), keys, 'the System strings sit together');
 const tables = [...new Set([...i18n.matchAll(/\{&(kStrings\w+), &kLocale\w+\}/g)].map(match => match[1]))];
-assert.deepEqual([...tables].sort(), ['kStringsDe', 'kStringsEn', 'kStringsFr', 'kStringsPl']);
+assert.deepEqual([...tables].sort(), ['kStringsDe', 'kStringsEn', 'kStringsFr', 'kStringsKo', 'kStringsPl']);
 for (const table of tables) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   const values = [...i18n.slice(start, i18n.indexOf('};', start)).matchAll(/"((?:\\.|[^"\\])*)"/g)]
@@ -88,7 +88,7 @@ assert.doesNotMatch(head, /s\.system_check_updates_btn|s\.system_install_btn_fmt
   const fields = [...struct.replace(/\/\/[^\n]*/g, '').matchAll(/const char\*\s+(\w+);/g)].map(match => match[1]);
   const index = fields.indexOf('settings_update_short');
   assert.ok(index >= 0, 'settings_update_short is a Strings field');
-  const expected = {kStringsEn: 'Update', kStringsDe: 'Update', kStringsFr: 'Mise à jour', kStringsPl: 'Aktualizacja'};
+  const expected = {kStringsEn: 'Update', kStringsDe: 'Update', kStringsFr: 'Mise à jour', kStringsPl: 'Aktualizacja', kStringsKo: '업데이트'};
   for (const [table, text] of Object.entries(expected)) {
     const start = i18nSource.indexOf(`static const Strings ${table} = {`);
     const values = [...i18nSource.slice(start, i18nSource.indexOf('};', start)).matchAll(/"((?:\\.|[^"\\])*)"/g)]

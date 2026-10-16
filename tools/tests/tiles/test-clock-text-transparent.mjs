@@ -28,7 +28,7 @@ assert.match(read('src/web/server/render/web_admin_html.cpp'),
   /\{\{"global", tr\.tile_color_mode_global\},\s*\{"transparent", tr\.tile_color_mode_transparent\},\s*\{"custom", tr\.tile_color_mode_custom\}\}/);
 const i18n = read('src/core/i18n/i18n.cpp');
 for (const [table, word] of [['kStringsEn', '"Transparent"'], ['kStringsDe', '"Transparent"'], ['kStringsFr', '"Transparent"'],
-  ['kStringsPl', '"Przezroczysty"']]) {
+  ['kStringsPl', '"Przezroczysty"'], ['kStringsKo', '"투명"']]) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   // Near the table's end (the page texts, b413, came after it).
   assert.ok(i18n.slice(start, i18n.indexOf('};', start)).slice(-1100).includes(word), `${table} ${word}`);

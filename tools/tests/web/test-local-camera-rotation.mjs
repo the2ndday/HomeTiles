@@ -354,6 +354,7 @@ const expected = {
   kStringsDe: ['Erweitert', 'Drehung', 'Rot und Blau tauschen'],
   kStringsFr: ['Avancé', 'Rotation', 'Inverser le rouge et le bleu'],
   kStringsPl: ['Zaawansowane', 'Obrót', 'Zamień czerwony i niebieski'],
+  kStringsKo: ['고급', '회전', '빨강 파랑 바꾸기'],
 };
 const tables = [...new Set([...i18n.matchAll(/\{&(kStrings\w+), &kLocale\w+\}/g)].map(match => match[1]))];
 assert.deepEqual([...tables].sort(), Object.keys(expected).sort(), 'Every registered language is checked');
@@ -371,6 +372,7 @@ for (const table of tables) {
 assert.notEqual(tails.kStringsDe[3], tails.kStringsEn[3], 'German note must be translated');
 assert.notEqual(tails.kStringsFr[3], tails.kStringsEn[3], 'French note must be translated');
 assert.notEqual(tails.kStringsPl[3], tails.kStringsEn[3], 'Polish note must be translated');
+assert.notEqual(tails.kStringsKo[3], tails.kStringsEn[3], 'Korean note must be translated');
 
 // --- Delivered browser code ----------------------------------------------------------
 const delivered = readAdminDeliverySource();

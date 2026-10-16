@@ -45,7 +45,7 @@ const fields = [...struct.replace(/\/\/[^\n]*/g, '').matchAll(/const char\*\s+(\
 const first = fields.indexOf(keys[0]);
 assert.deepEqual(fields.slice(first, first + keys.length), keys, 'the setup strings sit together');
 const placeholders = text => (text.match(/%[ds]/g) || []).join('');
-for (const table of ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl']) {
+for (const table of ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl', 'kStringsKo']) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   const values = [...i18n.slice(start, i18n.indexOf('};', start)).matchAll(/"((?:\\.|[^"\\])*)"/g)]
     .map(match => match[1]);

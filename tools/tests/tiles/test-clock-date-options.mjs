@@ -19,17 +19,17 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\
 // stand-in on the host (web_scripts.cpp CLOCK_I18N comes from the same).
 const i18n = read('src/core/i18n/i18n.cpp');
 const table = (lang) => {
-  const name = {de: 'kLocaleDe', en: 'kLocaleEn', fr: 'kLocaleFr', pl: 'kLocalePl'}[lang];
+  const name = {de: 'kLocaleDe', en: 'kLocaleEn', fr: 'kLocaleFr', pl: 'kLocalePl', ko: 'kLocaleKo'}[lang];
   const start = i18n.indexOf(`static const LocaleProfile ${name} = {`);
   const body = i18n.slice(start, i18n.indexOf('static const ', start + 10) > 0 ? i18n.indexOf('static const ', start + 10) : undefined);
   const list = (re) => re.exec(body)[1].split(/",\s*"/).map(s => s.replace(/^"|"$/g, ''));
-  const weekdays = list(/\{("(?:Sonntag|Sunday|Dimanche|Niedziela)"[^}]*)\}/);
-  const short = list(/\{("(?:So|Sun|Dim|Nd)"[^}]*)\}/);
-  const months = list(/\{("(?:Januar|January|janvier|stycznia)"[^}]*)\}/);
-  const pattern = /\}\,\s*\n?\s*"(\{d\}[^"]*)"\s*,?\s*\n?\}/.exec(body)?.[1];
+  const weekdays = list(/\{("(?:Sonntag|Sunday|Dimanche|Niedziela|일요일)"[^}]*)\}/);
+  const short = list(/\{("(?:So|Sun|Dim|Nd|일)"[^}]*)\}/);
+  const months = list(/\{("(?:Januar|January|janvier|stycznia|1월)"[^}]*)\}/);
+  const pattern = /\}\,\s*\n?\s*"(\{(?:d|M)\}[^"]*)"\s*,?\s*\n?\}/.exec(body)?.[1];
   return {months, weekdays, weekdaysShort: short, pattern};
 };
-const LANGS = ['de', 'en', 'fr', 'pl'];
+const LANGS = ['de', 'en', 'fr', 'pl', 'ko'];
 const TABLES = Object.fromEntries(LANGS.map(lang => [lang, table(lang)]));
 const cstr = v => JSON.stringify(v);
 const shim = `#pragma once
@@ -53,9 +53,9 @@ ${LANGS.map(lang => `  if (code && strcmp(code, ${cstr(lang)}) == 0) return k_${
 `;
 
 // Panel: every case for the 21st of August 2026 (a Friday) and the 10th of
-// October 2026 (a Saturday), in all four languages.
+// October 2026 (a Saturday), in all five languages.
 const cases = [];
-for (const lang of ['de', 'en', 'fr', 'pl']) {
+for (const lang of ['de', 'en', 'fr', 'pl', 'ko']) {
   for (const [wday, day, month] of [[5, 21, 7], [6, 10, 9]]) {
     for (let format = 1; format <= 7; ++format) {
       for (const weekday of [0, 1, 2]) {
@@ -84,7 +84,7 @@ int main() {
                 o.dial, o.hands, static_cast<int>(clock_tile::normalize_date_options(raw)));
   }
   // The month formats' list labels: patterns in the locale's order.
-  for (const char* lang : {"de", "en", "fr", "pl"}) {
+  for (const char* lang : {"de", "en", "fr", "pl", "ko"}) {
     for (int format : {6, 7}) {
       char pattern[32];
       clock_tile::format_date_pattern(pattern, sizeof(pattern), static_cast<uint8_t>(format), lang);
@@ -107,6 +107,8 @@ if (output !== null) {
   assert.equal(at('en', 21, 7, 0), '21 August 2026', 'issue #13: DD MMMM YYYY');
   assert.equal(at('fr', 10, 7, 0), '10 octobre 2026');
   assert.equal(at('pl', 21, 6, 0), '21 sierpnia', 'Polish month in the genitive');
+  assert.equal(at('ko', 21, 6, 0), '8월 21일', 'Korean month before the day');
+  assert.equal(at('ko', 10, 7, 0), '10월 10일 2026', 'Korean month with the year');
   assert.equal(at('de', 10, 6, 2), 'Samstag, 10. Oktober', 'design 1 "Mit Wochentag"');
   assert.equal(at('de', 10, 1, 1), 'Sa, 10.10.2026');
   assert.equal(at('de', 10, 1, 2, 0), 'Samstag', 'the weekday alone');
@@ -118,7 +120,8 @@ if (output !== null) {
   const patterns = Object.fromEntries(lines.filter(l => l.startsWith('pattern '))
     .map(l => l.replace(/\|\r?$/, '').match(/^pattern (\w+) (\d) (.*)$/)).map(m => [m[1] + m[2], m[3]]));
   assert.deepEqual(patterns, {de6: 'DD. MMMM', de7: 'DD. MMMM YYYY', en6: 'DD MMMM', en7: 'DD MMMM YYYY',
-    fr6: 'DD MMMM', fr7: 'DD MMMM YYYY', pl6: 'DD MMMM', pl7: 'DD MMMM YYYY'});
+    fr6: 'DD MMMM', fr7: 'DD MMMM YYYY', pl6: 'DD MMMM', pl7: 'DD MMMM YYYY',
+    ko6: 'MMMM DD일', ko7: 'MMMM DD일 YYYY'});
   assert.deepEqual(packs['3'], [3, 0, 0, 0, 0, 0, 0, 3], 'an old tile: the format alone, centered, digital');
   assert.deepEqual(packs[String(0x106)], [6, 1, 0, 0, 0, 0, 0, 0x106]);
   assert.deepEqual(packs[String(0x405)], [5, 0, 1, 0, 0, 0, 0, 0x405], 'rolling digits');

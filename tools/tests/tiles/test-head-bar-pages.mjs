@@ -306,7 +306,8 @@ for (const [table, words] of Object.entries({
   kStringsDe: ['"Seiten"', '"Seiten gespeichert"', '"%u Ordner haben in diesem Layout keinen Platz.', '"Seiten haben keine PIN."'],
   kStringsEn: ['"Pages"', '"Pages saved"', '"%u folders have no place in this layout.', '"Pages have no PIN."'],
   kStringsFr: ['"Pages"', '"Pages enregistrées"', '"%u dossiers n\'ont pas de place', '"Les pages n\'ont pas de code PIN."'],
-  kStringsPl: ['"Strony"', '"Zapisano strony"', '"Foldery bez miejsca w tym układzie: %u.', '"Strony nie mają kodu PIN."']})) {
+  kStringsPl: ['"Strony"', '"Zapisano strony"', '"Foldery bez miejsca w tym układzie: %u.', '"Strony nie mają kodu PIN."'],
+  kStringsKo: ['"페이지"', '"페이지 저장됨"', '"%u개 폴더가 이 레이아웃에 자리가 없습니다.', '"페이지에는 PIN이 없습니다."']})) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   const body = i18n.slice(start, i18n.indexOf('};', start));
   for (const word of words) assert.ok(body.includes(word), `${table} ${word}`);

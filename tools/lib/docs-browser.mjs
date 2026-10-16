@@ -8,6 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 export async function startDocsBrowser(executable, directory) {
   const args = ["--headless=new", "--disable-gpu", "--disable-extensions", "--no-first-run",
     "--no-default-browser-check", "--disable-background-networking", "--remote-debugging-port=0",
+    "--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1 , EXCLUDE localhost",
     `--user-data-dir=${directory}`, "--window-size=1280,960", "about:blank"];
   if (process.getuid?.() === 0) args.unshift("--no-sandbox");
   const child = spawn(executable, args, { windowsHide: true, stdio: ["ignore", "ignore", "pipe"] });
@@ -30,10 +31,23 @@ export async function startDocsBrowser(executable, directory) {
     });
     let sequence = 0;
     const pending = new Map();
+    const listeners = new Map();
     const errors = [];
+    const on = (method, handler) => {
+      let handlers = listeners.get(method);
+      if (!handlers) listeners.set(method, handlers = new Set());
+      handlers.add(handler);
+      return () => handlers.delete(handler);
+    };
+    const once = (method, timeout = 30000) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { off(); reject(new Error(`Event ${method} did not fire in ${timeout / 1000} s\n${browserLog}`)); }, timeout);
+      const off = on(method, value => { clearTimeout(timer); off(); resolve(value); });
+    });
     socket.addEventListener("message", event => {
       const message = JSON.parse(event.data);
       if (message.method === "Runtime.exceptionThrown") errors.push(message.params.exceptionDetails);
+      const handlers = message.method && listeners.get(message.method);
+      if (handlers) for (const handler of [...handlers]) handler(message.params);
       const callback = pending.get(message.id);
       if (!callback) return;
       pending.delete(message.id);
@@ -42,7 +56,7 @@ export async function startDocsBrowser(executable, directory) {
     });
     // A call the browser never answers (a hung or crashed renderer) fails the
     // test with its name instead of holding the CI job until it is cancelled.
-    const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const rawSend = (method, params = {}) => new Promise((resolve, reject) => {
       const id = ++sequence;
       const timer = setTimeout(() => {
         pending.delete(id);
@@ -54,6 +68,15 @@ export async function startDocsBrowser(executable, directory) {
       });
       socket.send(JSON.stringify({ id, method, params }));
     });
+    // A reload must settle the new document before its caller proceeds: the CDP
+    // response can arrive before `Page.loadEventFired`, so a following
+    // `Page.navigate` would otherwise collide with the in-flight reload.
+    const send = (method, params = {}) => {
+      if (method !== "Page.reload") return rawSend(method, params);
+      const loaded = once("Page.loadEventFired");
+      loaded.catch(() => {});
+      return Promise.all([rawSend(method, params), loaded]).then(([response]) => response);
+    };
     await send("Page.enable");
     await send("Runtime.enable");
     const evaluate = async expression => {
@@ -66,7 +89,14 @@ export async function startDocsBrowser(executable, directory) {
       async until(expression, label, timeout = 10000) {
         const deadline = Date.now() + timeout;
         while (Date.now() < deadline) {
-          if (await evaluate(expression)) return;
+          try {
+            if (await evaluate(expression)) return;
+          } catch (error) {
+            // A navigation in flight tears down the execution context under an
+            // evaluation; keep polling until the deadline instead of failing.
+            const transient = ["Inspected target navigated or closed", "Execution context was destroyed", "Cannot find context"];
+            if (!transient.some(text => error.message.includes(text))) throw error;
+          }
           await delay(30);
         }
         throw new Error(`${label}: ${await evaluate("JSON.stringify({header: document.querySelector('.ht-serial-status')?.textContent, installer: window.installerRoot?.querySelector('#installer-status')?.textContent, events: window.fixture?.events, search: document.querySelector('[data-md-component=search]')?.innerText})")}\n${await evaluate("document.body.innerText.slice(-1200)")}`);

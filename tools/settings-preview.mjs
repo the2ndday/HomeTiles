@@ -77,7 +77,7 @@ const state = option('state');
 const dialog = option('dialog');
 const entry = option('entry');
 const step = Number(option('step') || 0);
-// --lang=de|fr|pl renders the firmware in that language (the mockup stays English).
+// --lang=de|fr|pl|ko renders the firmware in that language (the mockup stays English).
 const language = option('lang') || 'en';
 // --keys=accents shows the keyboard's accent page (with --entry).
 const keys = option('keys');
@@ -132,7 +132,7 @@ const table = name => {
   const start = i18nSource.indexOf(`static const Strings ${name} = {`);
   return i18nSource.slice(start, i18nSource.indexOf('};', start) + 2);
 };
-const enTable = ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl'].map(table).join('\n');
+const enTable = ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl', 'kStringsKo'].map(table).join('\n');
 // The English time zone names (LocaleProfile kLocaleEn timezone_labels).
 const enLocale = i18nSource.slice(i18nSource.indexOf('static const LocaleProfile kLocaleEn = {'));
 const zonesStart = enLocale.indexOf('{"UTC+0 - UTC"');
@@ -238,12 +238,12 @@ ${strip(read('src/ui/tabs/settings/settings_screen.cpp'))}
 ${strip(read('src/ui/tabs/settings/setup_screen.cpp'))}
 // The mockup's example state.
 namespace settings_model {
-const i18n::Strings& text() { return i18n::${{de: 'kStringsDe', fr: 'kStringsFr', pl: 'kStringsPl'}[language] || 'kStringsEn'}; }
-uint8_t language_count() { return 4; }
+const i18n::Strings& text() { return i18n::${{de: 'kStringsDe', fr: 'kStringsFr', pl: 'kStringsPl', ko: 'kStringsKo'}[language] || 'kStringsEn'}; }
+uint8_t language_count() { return 5; }
 const i18n::Strings& text_of(uint8_t language) {
   static const i18n::Strings* const kTables[] = {&i18n::kStringsEn, &i18n::kStringsDe, &i18n::kStringsFr,
-                                                 &i18n::kStringsPl};
-  return *kTables[language < 4 ? language : 0];
+                                                 &i18n::kStringsPl, &i18n::kStringsKo};
+  return *kTables[language < 5 ? language : 0];
 }
 uint32_t card_color() { return 0x1A1A1A; }
 DisplayValues display_values() { return {80, 1, 100, 4, 3, 20, 1, 100}; }
@@ -277,11 +277,11 @@ bool time_text(char* buf, size_t len) { snprintf(buf, len, "%s", "${time}"); ret
 bool update_available() { return false; }
 // Localization: English, Berlin, the rest Auto (mockup st.loc).
 uint8_t locale_option_count(LocaleList list) {
-  static const uint8_t kCounts[] = {4, 27, 3, 4, 4};
+  static const uint8_t kCounts[] = {5, 27, 3, 4, 4};
   return kCounts[static_cast<int>(list)];
 }
 const char* locale_option(LocaleList list, uint8_t index) {
-  static const char* const kLanguages[] = {"English", "Deutsch", "Fran\xC3\xA7" "ais", "Polski"};
+  static const char* const kLanguages[] = {"English", "Deutsch", "Fran\xC3\xA7" "ais", "Polski", "한국어"};
   static const char* const kZones[] = ${zones};
   static const char* const kTimes[] = {"Auto (language)", "24-hour", "12-hour"};
   static const char* const kDates[] = {"Auto (language)", "DD.MM.YYYY", "MM/DD/YYYY", "YYYY/MM/DD"};

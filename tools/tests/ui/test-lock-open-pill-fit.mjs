@@ -25,6 +25,8 @@ assert.match(lock.source, /pw = std::min\(pw, content_w\);/, 'never wider than t
 const i18n = read('src/core/i18n/i18n.cpp');
 const polish = i18n.slice(i18n.indexOf('static const LocaleProfile kLocalePl = {'));
 for (const text of ['Na pewno otworzyć?', 'Otwórz drzwi']) assert.ok(polish.includes(`"${text}"`), text);
+const korean = i18n.slice(i18n.indexOf('static const LocaleProfile kLocaleKo = {'));
+for (const text of ['정말 열까요?', '문 열기']) assert.ok(korean.includes(`"${text}"`), text);
 
 const host = await lvglHost(root);
 if (!host) {

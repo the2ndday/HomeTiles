@@ -29,6 +29,8 @@ const expected = {
     'Non connecté', "Point d'accès actif", 'Mise à jour disponible'],
   kStringsPl: ['Ekran', 'Jasność', 'Uśpienie', 'Obrót', 'Wygaszacz ekranu', 'Start po', 'Uśpienie %s',
     'Brak połączenia', 'Punkt dostępu włączony', 'Dostępna aktualizacja'],
+  kStringsKo: ['화면', '밝기', '절전', '회전', '화면 보호기', '시작 시간', '절전 %s',
+    '연결 안 됨', '핫스팟 켜짐', '업데이트 있음'],
 };
 const struct = header.slice(header.indexOf('struct Strings {'), header.indexOf('\n};', header.indexOf('struct Strings {')));
 const fields = [...struct.replace(/\/\/[^\n]*/g, '').matchAll(/const char\*\s+(\w+);/g)].map(match => match[1]);

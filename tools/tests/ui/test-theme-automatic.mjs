@@ -49,7 +49,7 @@ assert.ok(html.includes('for (uint8_t theme = 0; theme < 3; ++theme) {') &&
   html.includes('theme == 2 ? tr.theme_auto : theme ? tr.theme_light : tr.theme_dark'), 'three choices');
 const i18n = read('src/core/i18n/i18n.cpp');
 for (const words of [['"Hell",', '"Automatisch",'], ['"Light",', '"Automatic",'], ['"Clair",', '"Automatique",'],
-  ['"Jasny",', '"Automatyczny",']]) {
+  ['"Jasny",', '"Automatyczny",'], ['"밝음",', '"자동",']]) {
   assert.ok(i18n.includes(words.map(word => '    ' + word).join('\n')), 'Automatic: ' + words[1]);
 }
 const saveTheme = read('src/web/admin/settings/display-borders.js');
@@ -105,4 +105,4 @@ assert.equal(result.status, 0, result.stderr);
 // Without sun times: 7:00 to 19:00. With them: sunrise to sunset; another
 // date falls back to the hours; polar day and night.
 assert.equal(result.stdout.trim(), '0110 0110 01 10');
-console.log('Automatic theme: stored, applied at boot and in the loop, sun times or 7-19 h, Web Admin choice in four languages');
+console.log('Automatic theme: stored, applied at boot and in the loop, sun times or 7-19 h, Web Admin choice in five languages');

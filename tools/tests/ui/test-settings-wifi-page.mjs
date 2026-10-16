@@ -41,7 +41,7 @@ const struct = header.slice(header.indexOf('struct Strings {'), header.indexOf('
 const fields = [...struct.replace(/\/\/[^\n]*/g, '').matchAll(/const char\*\s+(\w+);/g)].map(match => match[1]);
 const first = fields.indexOf(keys[0]);
 assert.deepEqual(fields.slice(first, first + keys.length), keys, 'the WiFi strings sit together');
-for (const table of ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl']) {
+for (const table of ['kStringsEn', 'kStringsDe', 'kStringsFr', 'kStringsPl', 'kStringsKo']) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   const values = [...i18n.slice(start, i18n.indexOf('};', start)).matchAll(/"((?:\\.|[^"\\])*)"/g)]
     .map(match => match[1]);

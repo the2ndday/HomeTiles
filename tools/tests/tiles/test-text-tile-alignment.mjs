@@ -48,7 +48,8 @@ const i18n = read('src/core/i18n/i18n.cpp');
 for (const [table, words] of Object.entries({kStringsEn: ['"Horizontal"', '"Vertical"', '"Top"', '"Middle"', '"Bottom"'],
   kStringsDe: ['"Waagerecht"', '"Senkrecht"', '"Oben"', '"Mitte"', '"Unten"'],
   kStringsFr: ['"Horizontal"', '"Vertical"', '"En haut"', '"Milieu"', '"En bas"'],
-  kStringsPl: ['"W poziomie"', '"W pionie"', '"Góra"', '"Środek"', '"Dół"']})) {
+  kStringsPl: ['"W poziomie"', '"W pionie"', '"Góra"', '"Środek"', '"Dół"'],
+  kStringsKo: ['"가로"', '"세로"', '"위쪽"', '"가운데"', '"아래쪽"']})) {
   const start = i18n.indexOf(`static const Strings ${table} = {`);
   const body = i18n.slice(start, i18n.indexOf('};', start));
   // Near the table's end (the page texts, b413, came after them).

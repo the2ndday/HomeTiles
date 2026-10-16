@@ -31,6 +31,7 @@ assert.match(fn('build_alarm'), /make_label\(key, fg, alarm_key_font\(label, wid
 const i18n = read('src/core/i18n/i18n.cpp');
 assert.ok(i18n.slice(i18n.indexOf('static const LocaleProfile kLocaleFr = {')).includes('"Personnalisé"'));
 assert.ok(i18n.slice(i18n.indexOf('static const LocaleProfile kLocalePl = {')).includes('"Poza domem"'));
+assert.ok(i18n.slice(i18n.indexOf('static const LocaleProfile kLocaleKo = {')).includes('"외출"'));
 
 const host = await lvglHost(root);
 if (!host) {

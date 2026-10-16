@@ -168,7 +168,7 @@ assert.ok(
     i18nHeader.includes('binary_sensor_states[36]'),
   'Binary popup and state strings must live in the central locale schema',
 );
-const locales = ['kLocaleDe', 'kLocaleEn', 'kLocaleFr', 'kLocalePl'];
+const locales = ['kLocaleDe', 'kLocaleEn', 'kLocaleFr', 'kLocalePl', 'kLocaleKo'];
 for (const locale of locales) {
   assert.ok(i18n.includes(locale), `Missing central locale: ${locale}`);
 }

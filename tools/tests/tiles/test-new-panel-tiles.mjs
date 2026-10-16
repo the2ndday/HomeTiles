@@ -150,7 +150,8 @@ const sceneMax = Number(/static constexpr size_t SCENE_MAX\s*=\s*(\d+);/.exec(re
 for (const words of [['Licht', 'Klima', 'Szenen', String.raw`Hallo!\nZum Blättern wischen`],
   ['Lights', 'Climate', 'Scenes', String.raw`Welcome!\nSwipe to change pages`],
   ['Lumières', 'Climat', 'Scènes', String.raw`Bienvenue\u00A0!\nGlissez\u00A0: pages`],
-  ['Światła', 'Klimat', 'Sceny', String.raw`Witaj!\nPrzesuń: inne strony`]]) {
+  ['Światła', 'Klimat', 'Sceny', String.raw`Witaj!\nPrzesuń: inne strony`],
+  ['조명', '기후', '장면', String.raw`환영!\n스와이프로 이동`]]) {
   assert.ok(i18n.includes(words.map(w => `    "${w}"`).join(',\n')), words.join(' '));
   const welcome = JSON.parse(`"${words[3]}"`);
   assert.equal(welcome.split('\n').length, 2, `${words[3]}: two lines`);

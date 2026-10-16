@@ -73,6 +73,7 @@ const expected = {
   kStringsEn: ['Tile', 'Global', 'Screensaver'],
   kStringsFr: ['Tuile', 'Global', 'Écran de veille'],
   kStringsPl: ['Kafelek', 'Globalne', 'Wygaszacz ekranu'],
+  kStringsKo: ['타일', '전역', '화면 보호기'],
 };
 for (const [name, values] of Object.entries(expected)) {
   const start = i18n.indexOf(`static const Strings ${name} = {`);
