@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "tag": "v0.9.1-ko",
+  "releaseUrl": "https://github.com/the2ndday/HomeTiles/releases/tag/v0.9.1-ko",
+  "generatedAt": "2026-10-16T03:37:14.247Z",
+  "devices": [
+    {
+      "key": "guition_esp32_4848s040",
+      "buildProfile": "guition_esp32_4848s040",
+      "label": "Guition ESP32-4848S040C_I",
+      "chipFamily": "ESP32-S3",
+      "flashSize": 16777216,
+      "status": "supported",
+      "hardwareCheck": "The exact model is ESP32-4848S040C_I (ESP32-S3).",
+      "update": {
+        "file": "hometiles_v0.9.1-ko_guition_esp32_4848s040.bin",
+        "size": 6070784,
+        "sha256": "64e4bf193c6ef3bf1dc66f054af321f1a72524d3bdbaf7daae2f37bdaf88767d"
+      },
+      "factory": {
+        "file": "hometiles_v0.9.1-ko_guition_esp32_4848s040_factory.bin",
+        "size": 16777216,
+        "sha256": "298e84d623452522b2784b0df39522fc5c4ca52d99321eed777184134d350309"
+      }
+    }
+  ],
+  "partial": true
+}
