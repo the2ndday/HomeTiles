@@ -60,6 +60,17 @@ gh workflow run firmware.yml --ref v0.9.1-ko
 gh run list --limit 5
 ```
 
+## Idea (parked 2026-10-16): alarm clock on the Date/Time tile
+
+Not started; a fork-only feature, so weigh the upstream-sync conflict cost first.
+
+- Wanted: one Date/Time tile (no Clock tile) that shows the panel's current time and date; a tap opens an alarm popup with quick choices **+10m, +20m, +30m, +1h**, the existing hh/mm rollers for an exact time, and **Off**.
+- Today a Date/Time tile shows its entity's value (not the current time) and its popup has only rollers; a Clock tile's tap always opens the screensaver (`src/types/clock/renderer.cpp`).
+- Plan: HA `input_datetime.alarm` (date + time) holds the ring time; the tile gets an "Alarm clock" option, shows the clock plus a small "⏰ 14:35" line while an alarm is set, and the presets set now + X through the existing `/control` path (no Bridge change: `input_datetime` is already allowed). Off = a time in the past, which the automation ignores.
+- Sound: the panel has none (HomeTiles has no audio driver; GPIO 1/2 audio exists only on some 4848 variants). An HA automation rings `media_player.alicia` (sound/TTS) and/or a phone alarm notification; optionally it wakes the panel screen and the tile flashes until tapped.
+- Open questions: ring target; presets counted from now (suggested) or added to the set time; screen wake/flash.
+- Size: about 8-12 files (renderer, popup, Web Admin option, i18n for all five languages, tests), new `-ko` release, HW check.
+
 ## Related Home Assistant setup (outside this repo)
 
 - Panel: 10.10.0.208, HA integration `tab5_lvgl` (HomeTiles Bridge). Notes in the Claude memory
