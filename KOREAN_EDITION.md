@@ -4,7 +4,7 @@ Fork of [GalusPeres/HomeTiles](https://github.com/GalusPeres/HomeTiles) (MIT) th
 Hangul text rendering for the **GUITION ESP32-4848S040** office panel. These notes cover
 the plan, the status and the next steps, so work can resume in a new session.
 
-Last updated: 2026-10-15.
+Last updated: 2026-10-16.
 
 ## Why
 
@@ -42,12 +42,12 @@ pushed from HA; they have to be in the firmware.
 - [x] Repo settings: Actions enabled on the fork; **Settings → Pages → Deploy from branch `gh-pages`** (created by docs.yml on first run); Actions "Read and write" workflow permissions
 - [x] Tag `v0.9.1-ko` (`e2408cc5`) → CI builds (`38845338862`) → release `hometiles_v0.9.1-ko_guition_esp32_4848s040.bin` (5.78 MiB update bin, 16.00 MiB factory bin, plus icon files)
 - [x] Fix `tools/lib/docs-browser.mjs` (`Page.reload` `loadEventFired` synchronization + offline `--host-resolver-rules` + transient context-navigation handling) and `tools/check-docs.py` (`/HomeTiles` subpath stripping on `404.html`) so `Deploy docs` (`38846355787`) passes reliably in CI
-- [ ] First flash: Chrome → installer (**https://the2ndday.github.io/HomeTiles/installer/**, or upstream installer "Local .bin") → device **Guition ESP32-4848S040C_I** → mode **Update** (keeps settings). The serial port is `/dev/ttyUSB0` (CH340); the user is in group `uucp`.
-- [ ] Verify Korean on the panel: the PC page Media tile shows `media_player.alicia` titles (YouTube Korean titles) and Korean UI language ("한국어") in Settings → Language
+- [x] First flash: the panel (Web Admin http://10.10.0.208/) runs `v0.9.1-ko`; system language stays English (the Hangul fallback fonts render Korean text in any UI language). Later updates: the panel's own GitHub update, Web Admin upload, or the installer (https://the2ndday.github.io/HomeTiles/installer/, mode **Update** keeps settings). No microSD card, so no panel screenshots.
+- [ ] Verify on the panel: the PC page Media tile and popup show Korean `media_player.alicia` titles (YouTube) in Hangul. Known gap: Hangul exists only at 12-28 px, so text drawn with 32 px and larger fonts (e.g. Clock dates at size 48+ on this panel) stays blank.
 - [x] GitHub Pages enabled (`gh-pages` branch, `/` path) and live at https://the2ndday.github.io/HomeTiles/installer/
 - [x] **Korean UI language** ("ko", "한국어") implemented on top of English. `src/core/i18n/i18n.cpp` now has `kStringsKo` (636 fields, all translated from `kStringsEn` with matching printf placeholders) and `kLocaleKo` (locale profile: 24-hour time, YYYY/MM/DD, `"{m} {d}일"` short date, `"{M} {d}일"` long date, Korean weekday/month names, timezone, climate/cover/binary-sensor/device/editable/entity-picker labels), both registered in `kLanguages[]`. Contract strings: `settings_link_direct_fmt` = `"직접 연결 · Bridge %s"`, `settings_link_mqtt_fmt` = `"MQTT · Broker %s"`, `settings_update_short` = `"업데이트"`, binary sensor ranges stay `"24H"`/`"7D"`, the welcome text `"환영!\n스와이프로 이동"` fits the Text tile's 31 bytes. `tools/generate-korean-fonts.mjs` scans `i18n.cpp` for Hangul and adds any missing syllables/jamo to the glyph set (the translation uses only KS X 1001 syllables, so the fonts keep 2,452 glyphs; the .c files were regenerated with the updated Opts note). Tests and `tools/settings-preview.mjs` accept Korean (`kStringsKo`/`kLocaleKo`, `--lang=ko`, 5 languages). (DeepSeek `dsw_mvacxcmi_75eaxg` complex_reasoning; host reviewed the translation quality.)
-- [ ] Create the `SYNC_TOKEN` repo secret: fine-grained PAT for `the2ndday/HomeTiles` with Contents + Workflows read/write (`gh secret set SYNC_TOKEN`); without it the sync job fails at its first step
-- [ ] Optional: suggest upstream (GitHub issue/PR) adding optional CJK fallback fonts
+- [x] `SYNC_TOKEN` repo secret set (fine-grained PAT for `the2ndday/HomeTiles`, Contents + Workflows read/write); test run 38904322691 checked out with it and skipped (tag exists). When the token expires, regenerate it and run `gh secret set SYNC_TOKEN --repo the2ndday/HomeTiles`.
+- Decided 2026-10-16: no upstream PR. The fonts add about 1 MB to every image (too much for tight boards such as the Tab5) and only the 4848 is hardware-tested.
 
 ## Useful commands
 
