@@ -61,7 +61,11 @@ assert.equal(gunzipSync(compressed).toString('utf8'), delivery,
   'The firmware must serve the checked delivery output');
 const expectedGzip = gzipSync(Buffer.from(delivery), {level: 9, mtime: 0});
 expectedGzip[9] = 255;
-assert.deepEqual(compressed, expectedGzip);
+// Buffer.equals, not deepEqual: a mismatch would make assert diff ~160K bytes
+// element by element, which exhausts tens of GB of memory before failing.
+assert.ok(compressed.equals(expectedGzip),
+  `Embedded admin.js gzip differs from this host's zlib output (${compressed.length} vs ` +
+  `${expectedGzip.length} bytes, Node ${process.version}); regenerate with the CI Node version`);
 assert.equal(compressed[9], 255, 'Normalize the gzip OS marker across hosts');
 assert.ok(compressed.length < gzipSync(Buffer.from(bundle.source), {level: 9}).length,
   'Delivery formatting should reduce the embedded JavaScript asset');

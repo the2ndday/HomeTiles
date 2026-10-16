@@ -1,12 +1,19 @@
 # Korean edition: keep the fork in sync with upstream automatically.
 #
 # Every day (and on demand) this workflow rebases the fork's Korean patch
-# commits onto the newest upstream release tag, publishes a `vX.Y.Z-ko` tag,
-# and dispatches the firmware build for that tag. Tags pushed with
-# GITHUB_TOKEN do not trigger other workflows, so the firmware build is
-# started explicitly with `gh workflow run firmware.yml --ref <tag>`
-# (workflow_dispatch is allowed for the GITHUB_TOKEN). firmware.yml's
-# release job publishes the GitHub release and then dispatches docs.yml; the
+# commits onto the newest upstream release tag, verifies the result with the
+# same checks as firmware.yml, and only then pushes `main` and a `vX.Y.Z-ko`
+# tag. A rebase conflict or a failed check opens an issue and pushes nothing,
+# so the next run retries once the problem is fixed (a pushed tag would make
+# every later run skip that version).
+#
+# The push uses the SYNC_TOKEN secret, not GITHUB_TOKEN: GitHub refuses
+# GITHUB_TOKEN pushes that create or update files under .github/workflows/,
+# and a rebase rewrites the fork's workflow commits. SYNC_TOKEN is a
+# fine-grained personal access token for this repository with "Contents:
+# Read and write" and "Workflows: Read and write". Because the tag is pushed
+# with that token, the tag push itself starts firmware.yml (on: push tags),
+# whose release job publishes the GitHub release and dispatches docs.yml; the
 # last step here waits for that release and dispatches docs.yml again as a
 # safety net (the docs.yml concurrency group de-duplicates both dispatches).
 name: Sync upstream
@@ -17,7 +24,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   issues: write
   actions: write
 
@@ -29,11 +36,21 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      - name: Require the SYNC_TOKEN secret
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          if [ -z "${SYNC_TOKEN}" ]; then
+            echo "SYNC_TOKEN is not configured. Add a fine-grained token with Contents and Workflows write access (see the header of this workflow)." >&2
+            exit 1
+          fi
+
       - name: Check out main with full history and tags
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.SYNC_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -87,35 +104,13 @@ jobs:
           } >> .git/info/attributes
           git rebase "${{ steps.upstream.outputs.up }}"
 
-      - name: Open an issue for a rebase conflict
-        if: steps.skip.outputs.skip != 'true' && failure() && steps.rebase.conclusion == 'failure'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          up="${{ steps.upstream.outputs.up }}"
-          git rebase --abort || true
-          {
-            echo "The automatic rebase of the Korean edition patches onto upstream tag \`${up}\` failed with conflicts. Resolve them manually, then rerun the workflow."
-            echo
-            echo '```'
-            git status --short
-            echo
-            git log --oneline -5
-            echo '```'
-          } > "${RUNNER_TEMP}/sync-conflict.md"
-          gh issue create \
-            --title "Upstream sync: rebase onto ${up} conflicted" \
-            --body-file "${RUNNER_TEMP}/sync-conflict.md"
-          exit 1
-
-      - name: Apply Korean edition changes and publish the tag
-        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
+      - name: Apply Korean edition changes
+        id: apply
+        if: steps.rebase.outcome == 'success'
         env:
           UP: ${{ steps.upstream.outputs.up }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Restore the Korean fallback wiring; idempotent, so upstream font
           # regenerations are handled by replaying this step.
@@ -133,24 +128,70 @@ jobs:
             git commit -m "Korean edition: rebase on ${UP}, release ${UP}-ko"
           fi
 
+      - name: Verify the rebased tree before publishing
+        id: verify
+        if: steps.apply.outcome == 'success'
+        run: |
+          set -euo pipefail
+          # The same checks firmware.yml runs before compiling. The language
+          # tables are positional: a string upstream added without a Korean
+          # entry fails test-i18n-table-alignment here, before anything is
+          # pushed, instead of after the tag exists.
+          npm ci --ignore-scripts --no-audit --no-fund
+          node tools/generate-device-profiles.mjs --check --matrix-device guition_esp32_4848s040
+          node tools/generate-web-assets.mjs --check
+          node tools/run-tests.mjs 2>&1 | tee "${RUNNER_TEMP}/tests.log"
+
+      - name: Open an issue when the sync cannot publish
+        if: >-
+          failure() && steps.skip.outputs.skip != 'true' &&
+          (steps.rebase.outcome == 'failure' || steps.apply.outcome == 'failure' ||
+           steps.verify.outcome == 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UP: ${{ steps.upstream.outputs.up }}
+          REBASE: ${{ steps.rebase.outcome }}
+          APPLY: ${{ steps.apply.outcome }}
+        run: |
+          if [ "${REBASE}" = "failure" ]; then
+            title="Upstream sync: rebase onto ${UP} conflicted"
+            summary="The automatic rebase of the Korean edition patches onto upstream tag \`${UP}\` failed with conflicts. Resolve them manually, then rerun the workflow."
+            details="$(git status --short; echo; git log --oneline -5)"
+            git rebase --abort || true
+          elif [ "${APPLY}" = "failure" ]; then
+            title="Upstream sync: applying the Korean edition on ${UP} failed"
+            summary="The rebase onto \`${UP}\` succeeded, but re-applying the Korean fallback wiring or the version failed. See the workflow run log."
+            details="$(git log --oneline -5)"
+          else
+            title="Upstream sync: checks failed on ${UP}"
+            summary="The rebase onto \`${UP}\` succeeded, but the checks failed, so nothing was pushed. New upstream UI strings usually need Korean entries in \`kStringsKo\`/\`kLocaleKo\` (\`src/core/i18n/i18n.cpp\`). Fix it on \`main\`, then rerun the workflow."
+            details="$(tail -n 60 "${RUNNER_TEMP}/tests.log" 2>/dev/null || git log --oneline -5)"
+          fi
+          {
+            echo "${summary}"
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo '```'
+            echo "${details}"
+            echo '```'
+          } > "${RUNNER_TEMP}/sync-failure.md"
+          gh issue create --title "${title}" --body-file "${RUNNER_TEMP}/sync-failure.md"
+
+      - name: Publish main and the Korean tag
+        if: steps.verify.outcome == 'success'
+        env:
+          UP: ${{ steps.upstream.outputs.up }}
+        run: |
+          set -euo pipefail
+          # Pushed with SYNC_TOKEN (persisted by actions/checkout); the tag
+          # push starts firmware.yml.
           git push --force-with-lease origin main
           git tag "${UP}-ko"
           git push origin "refs/tags/${UP}-ko"
 
-      - name: Dispatch the firmware build for the new Korean tag
-        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # A tag pushed with GITHUB_TOKEN does not trigger workflows, but a
-          # workflow_dispatch does. With github.ref = refs/tags/vX.Y.Z-ko the
-          # firmware.yml release job builds and publishes the GitHub release.
-          gh workflow run firmware.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref "${{ steps.upstream.outputs.up }}-ko"
-
       - name: Refresh the web installer after the release exists
-        if: steps.skip.outputs.skip != 'true' && steps.rebase.conclusion == 'success'
+        if: steps.verify.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           KO_TAG: ${{ steps.upstream.outputs.up }}-ko
