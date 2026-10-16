@@ -44,6 +44,8 @@ pushed from HA; they have to be in the firmware.
 - [ ] Run docs.yml → web installer at the Pages URL
 - [ ] First flash: Chrome → installer (fork Pages URL, or upstream installer "Local .bin") → device **Guition ESP32-4848S040C_I** → mode **Update** (keeps settings). The serial port is `/dev/ttyUSB0` (CH340); the user is in group `uucp`.
 - [ ] Verify Korean on the panel: the PC page Media tile shows `media_player.alicia` titles (YouTube Korean titles)
+- [x] Committed `4feb6a08`, pushed; Actions enabled (write perms); tag `v0.9.1-ko` pushed → runs "Firmware builds" 38840341373 + "Deploy docs" 38840315338 (check `gh run list -R the2ndday/HomeTiles`). After docs succeeds: enable Pages (`gh api -X POST repos/the2ndday/HomeTiles/pages -f 'source[branch]=gh-pages' -f 'source[path]=/'`).
+- [ ] **NEXT (user request): Korean UI language** on top of English. Upstream i18n: `src/core/i18n/i18n.h` (struct `Strings`, ~716 `const char*` fields) and `i18n.cpp` with tables `kStringsDe/En/Fr/Pl` (~670 lines each) + `LocaleProfile kLocaleXx` (date/time/weather words, ~120 lines) + the `kLanguages[]` registry (line ~3111). The Web Admin JS strings come from the same table (`src/web/server/render/web_admin_scripts.cpp` `appendJsEntry("tileSaved", tr.js_tile_saved)`). Plan: add `kStringsKo` + `kLocaleKo` ("ko", "한국어"), register in `kLanguages`, translate from the En table; then check all Hangul used is in the KS X 1001 subset (extend the font generator to include any missing syllables from the Ko table automatically); then run the tests; then tag a new `-ko` release. Delegate to DeepSeek (complex_reasoning); review the translation quality.
 - [ ] Optional: suggest upstream (GitHub issue/PR) adding optional CJK fallback fonts
 
 ## Useful commands
